@@ -1,33 +1,29 @@
 # main.py — FastAPI Server
-# Day 3: Connected to SQLite database
-# Tasks are now saved permanently
+# Day 3: Connected to Groq AI
+# Tasks now get AI-powered analysis
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
+import json
 
 from backend.app.database import engine, get_db, Base
 from backend.app.models import Task
+from backend.app.ai_service import analyze_task, get_fallback_analysis
 
 # Create all database tables automatically
-# This reads all models and creates tables
-# in SQLite if they do not exist yet
-
 Base.metadata.create_all(bind=engine)
 
 # Create FastAPI app
-
 app = FastAPI(
     title="Smart Task Manager",
-    description="AI-powered task manager using Gemini AI",
-    version="2.0.0"
+    description="AI-powered task manager using Groq AI",
+    version="3.0.0"
 )
 
-
 # CORS — allows React frontend to talk to backend
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -38,27 +34,24 @@ app.add_middleware(
 
 # Request model — what data user sends
 # when creating a task
-
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
     priority: Optional[str] = "medium"
 
 # Home endpoint
-
 @app.get("/")
 def home():
     return {
         "message": "Smart Task Manager API is running",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "status": "healthy",
-        "database": "SQLite connected"
+        "database": "SQLite connected",
+        "ai": "Groq AI connected"
     }
-
 
 # Health check endpoint
 # Used by Jenkins to verify server is alive
-
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     total_tasks = db.query(Task).count()
@@ -66,30 +59,35 @@ def health_check(db: Session = Depends(get_db)):
         "status": "healthy",
         "message": "Server is running perfectly",
         "total_tasks": total_tasks,
-        "database": "connected"
+        "database": "connected",
+        "ai": "Groq AI ready"
     }
 
 # GET /tasks — get all tasks from database
-# db.query(Task) = look in tasks table
-# .all()         = get every row
-
-
 @app.get("/tasks")
 def get_tasks(db: Session = Depends(get_db)):
     tasks = db.query(Task).all()
+
+    task_list = []
+    for task in tasks:
+        task_dict = {
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "priority": task.priority,
+            "completed": task.completed,
+            "created_at": str(task.created_at),
+            "ai_analysis": json.loads(task.ai_analysis) if task.ai_analysis else None
+        }
+        task_list.append(task_dict)
+
     return {
         "status": "success",
-        "total": len(tasks),
-        "tasks": tasks
+        "total": len(task_list),
+        "tasks": task_list
     }
 
-
-# POST /tasks — create a new task
-#
-# db.add(new_task)    = prepare to save
-# db.commit()         = actually save
-# db.refresh(new_task) = get saved data back
-
+# POST /tasks — create task + get AI analysis
 @app.post("/tasks")
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
@@ -100,7 +98,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
             detail="Task title cannot be empty"
         )
 
-    # Create new task object
+    # Step 1 — Save task to database first
     new_task = Task(
         title=task.title,
         description=task.description,
@@ -109,32 +107,39 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         ai_analysis=None
     )
 
-    # Save to database
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
 
+    # Step 2 — Send to Groq AI for analysis
+    # try = attempt to call Groq
+    # except = if anything fails use fallback
+    try:
+        analysis = analyze_task(task.title, task.description)
+    except Exception:
+        analysis = get_fallback_analysis(task.title)
+
+    # Step 3 — Save AI analysis to database
+    new_task.ai_analysis = json.dumps(analysis)
+    db.commit()
+    db.refresh(new_task)
+
+    # Step 4 — Return task with AI analysis
     return {
         "status": "success",
-        "message": "Task created and saved to database",
+        "message": "Task created and analyzed by Groq AI",
         "task": {
             "id": new_task.id,
             "title": new_task.title,
             "description": new_task.description,
             "priority": new_task.priority,
             "completed": new_task.completed,
-            "ai_analysis": new_task.ai_analysis,
-            "created_at": str(new_task.created_at)
+            "created_at": str(new_task.created_at),
+            "ai_analysis": analysis
         }
     }
 
-
 # DELETE /tasks/{task_id} — delete a task
-#
-# Find task by id
-# If not found → send 404 error
-# If found → delete from database
-
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
 
@@ -157,9 +162,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
         "message": f"Task {task_id} deleted from database"
     }
 
-
-# PUT /tasks/{task_id} — mark task as complete
-
+# PUT /tasks/{task_id}/complete — mark task as complete
 @app.put("/tasks/{task_id}/complete")
 def complete_task(task_id: int, db: Session = Depends(get_db)):
 

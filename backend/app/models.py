@@ -1,18 +1,15 @@
-# ============================================
 # models.py — Database Models
 # This file defines what a Task looks like
 # in the database
-# ============================================
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
 from backend.app.database import Base
 
-# ============================================
 # Task Model
 # This creates a "tasks" table in SQLite
 # with these exact columns
-# ============================================
+
 class Task(Base):
 
     # Name of the table in database
@@ -39,7 +36,7 @@ class Task(Base):
     # False by default — new tasks are not completed
     completed = Column(Boolean, default=False)
 
-    # AI analysis from Gemini
+    # AI analysis from Groq
     # Empty now — filled on Day 4
     ai_analysis = Column(String, nullable=True)
 
