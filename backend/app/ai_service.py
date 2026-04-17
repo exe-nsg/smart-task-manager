@@ -12,21 +12,30 @@ def analyze_task(title: str, description: str = "") -> dict:
     prompt = f"""
     You are an expert productivity coach with 10 years experience.
 
-    Analyze this task and provide smart insights:
+    Analyze this task and provide detailed smart insights:
 
     TASK TITLE: {title}
     TASK DESCRIPTION: {description}
 
-    Return your analysis in this EXACT JSON format:
+    Return ONLY this exact JSON:
     {{
-        "priority_score": <number between 1 and 100>,
-        "estimated_time": "<realistic time estimate like 30 minutes or 2 hours>",
-        "category": "<one of: Academic, Work, Personal, Health, Finance, Other>",
-        "suggestion": "<one specific actionable advice for this task>",
-        "best_time": "<one of: Morning, Afternoon, Evening, Anytime>"
+        "priority_score": <number 1-100>,
+        "estimated_time": "<e.g. 30 minutes or 2 hours>",
+        "category": "<Academic, Work, Personal, Health, Finance, Creative, or Other>",
+        "difficulty_level": "<Easy, Medium, or Hard>",
+        "energy_required": "<Low, Medium, or High>",
+        "deadline_sensitivity": "<Urgent, Normal, or Flexible>",
+        "best_time": "<Early Morning, Morning, Afternoon, Evening, or Anytime>",
+        "suggestion": "<one specific actionable tip for this task>",
+        "motivation": "<one powerful motivational sentence specific to this task>",
+        "steps": [
+            "<step 1>",
+            "<step 2>",
+            "<step 3>"
+        ]
     }}
 
-    Return ONLY the JSON. No extra text before or after.
+    Return ONLY the JSON. No extra text.
     """
 
     response = client.chat.completions.create(
@@ -45,8 +54,7 @@ def analyze_task(title: str, description: str = "") -> dict:
         if response_text.startswith("json"):
             response_text = response_text[4:]
 
-    analysis = json.loads(response_text)
-    return analysis
+    return json.loads(response_text)
 
 
 def get_fallback_analysis(title: str) -> dict:
@@ -54,6 +62,15 @@ def get_fallback_analysis(title: str) -> dict:
         "priority_score": 50,
         "estimated_time": "1 hour",
         "category": "General",
+        "difficulty_level": "Medium",
+        "energy_required": "Medium",
+        "deadline_sensitivity": "Normal",
+        "best_time": "Morning",
         "suggestion": f"Break '{title}' into smaller steps and tackle one at a time",
-        "best_time": "Morning"
+        "motivation": f"Every big achievement starts with the decision to try. You've got this!",
+        "steps": [
+            "Plan your approach before starting",
+            "Focus on one section at a time",
+            "Review your work when finished"
+        ]
     }

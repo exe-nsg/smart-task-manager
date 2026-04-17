@@ -1,6 +1,10 @@
 # main.py — FastAPI Server
-# Day 3: Connected to Groq AI
+# Day 3: Connected to Gemini AI
 # Tasks now get AI-powered analysis
+
+import json
+from backend.app.ai_service import analyze_task, get_fallback_analysis
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +16,7 @@ import json
 from backend.app.database import engine, get_db, Base
 from backend.app.models import Task
 from backend.app.ai_service import analyze_task, get_fallback_analysis
+from datetime import datetime
 
 # Create all database tables automatically
 Base.metadata.create_all(bind=engine)
@@ -19,7 +24,7 @@ Base.metadata.create_all(bind=engine)
 # Create FastAPI app
 app = FastAPI(
     title="Smart Task Manager",
-    description="AI-powered task manager using Groq AI",
+    description="AI-powered task manager using Gemini AI",
     version="3.0.0"
 )
 
@@ -38,6 +43,7 @@ class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = ""
     priority: Optional[str] = "medium"
+    due_date: Optional[str] = None
 
 # Home endpoint
 @app.get("/")
@@ -47,7 +53,7 @@ def home():
         "version": "3.0.0",
         "status": "healthy",
         "database": "SQLite connected",
-        "ai": "Groq AI connected"
+        "ai": "Gemini AI connected"
     }
 
 # Health check endpoint
@@ -60,7 +66,7 @@ def health_check(db: Session = Depends(get_db)):
         "message": "Server is running perfectly",
         "total_tasks": total_tasks,
         "database": "connected",
-        "ai": "Groq AI ready"
+        "ai": "Gemini AI ready"
     }
 
 # GET /tasks — get all tasks from database
@@ -104,6 +110,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         description=task.description,
         priority=task.priority,
         completed=False,
+        due_date=datetime.fromisoformat(task.due_date) if task.due_date else None,
         ai_analysis=None
     )
 
@@ -111,8 +118,8 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_task)
 
-    # Step 2 — Send to Groq AI for analysis
-    # try = attempt to call Groq
+    # Step 2 — Send to Gemini AI for analysis
+    # try = attempt to call Gemini
     # except = if anything fails use fallback
     try:
         analysis = analyze_task(task.title, task.description)
@@ -127,7 +134,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     # Step 4 — Return task with AI analysis
     return {
         "status": "success",
-        "message": "Task created and analyzed by Groq AI",
+        "message": "Task created and analyzed by Gemini AI",
         "task": {
             "id": new_task.id,
             "title": new_task.title,
