@@ -1,0 +1,39 @@
+# ════════════════════════════════════════
+# Docker Compose — Smart Task Manager
+# Runs backend + frontend together
+# Usage: docker-compose up
+# ════════════════════════════════════════
+
+services:
+
+  # ── BACKEND SERVICE ──
+  # FastAPI server running on port 8000
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: smart-task-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Share the database file with your Mac
+      # So data persists even when container stops
+      - ./tasks.db:/app/tasks.db
+    environment:
+      # Pass your API key from .env file
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    restart: unless-stopped
+
+  # ── FRONTEND SERVICE ──
+  # React app served by Nginx on port 3000
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: smart-task-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      # Wait for backend to start first
+      - backend
+    restart: unless-stopped
