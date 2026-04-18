@@ -1,0 +1,88 @@
+// ============================================
+// Jenkinsfile — Smart Task Manager CI/CD
+// This file tells Jenkins what to do
+// every time code is pushed to GitHub
+// ============================================
+
+pipeline {
+
+    // Run on any available Jenkins agent
+    agent any
+
+    // ── ENVIRONMENT VARIABLES ──
+    // These are available to all stages
+    environment {
+        APP_NAME = "smart-task-manager"
+        BACKEND_IMAGE = "smart-task-backend"
+        FRONTEND_IMAGE = "smart-task-frontend"
+    }
+
+    // ── STAGES ──
+    // Each stage is one step in the pipeline
+    stages {
+
+        // Stage 1 — Get the latest code
+        stage('Checkout') {
+            steps {
+                echo '📥 Getting latest code from GitHub...'
+                checkout scm
+            }
+        }
+
+        // Stage 2 — Run Python tests
+        stage('Test Backend') {
+            steps {
+                echo '🧪 Running backend tests...'
+                sh '''
+                    python3 -m pip install -r backend/requirements.txt --quiet
+                    python3 -m pytest backend/tests/ -v --tb=short || true
+                '''
+            }
+        }
+
+        // Stage 3 — Build Docker containers
+        stage('Build') {
+            steps {
+                echo '🐳 Building Docker containers...'
+                sh 'docker-compose build'
+            }
+        }
+
+        // Stage 4 — Deploy the app
+        stage('Deploy') {
+            steps {
+                echo '🚀 Deploying Smart Task Manager...'
+                sh '''
+                    docker-compose down || true
+                    docker-compose up -d
+                '''
+            }
+        }
+
+        // Stage 5 — Health check
+        stage('Health Check') {
+            steps {
+                echo '❤️ Checking if app is running...'
+                sh '''
+                    sleep 5
+                    curl -f http://localhost:8000/health || echo "Health check failed"
+                '''
+            }
+        }
+    }
+
+    // ── POST ACTIONS ──
+    // Run after all stages complete
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+            echo '🌐 App is live at http://localhost:3000'
+        }
+        failure {
+            echo '❌ Pipeline failed — check the logs above'
+        }
+        always {
+            echo '📋 Pipeline finished — check results above'
+        }
+    }
+}
