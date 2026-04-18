@@ -44,5 +44,7 @@ class Task(Base):
     # server_default=func.now() means
     # database sets this automatically
     due_date = Column(DateTime, nullable=True)
+    user_email = Column(String, nullable=True)
     due_date = Column(DateTime, nullable=True)
+    user_email = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

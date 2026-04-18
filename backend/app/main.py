@@ -18,6 +18,35 @@ from backend.app.models import Task
 from backend.app.ai_service import analyze_task, get_fallback_analysis
 from datetime import datetime
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from backend.app.email_service import send_reminder_email
+
+# ── EMAIL REMINDER SCHEDULER ──
+def check_and_send_reminders():
+    db = SessionLocal()
+    try:
+        now = datetime.now()
+        reminder_time = now + timedelta(minutes=15)
+        tasks = db.query(Task).filter(
+            Task.completed == False,
+            Task.due_date != None,
+            Task.user_email != None
+        ).all()
+        for task in tasks:
+            diff = (task.due_date - now).total_seconds() / 60
+            if 14 <= diff <= 16:
+                send_reminder_email(
+                    task.user_email,
+                    task.title,
+                    task.due_date.strftime("%I:%M %p")
+                )
+    finally:
+        db.close()
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(check_and_send_reminders, 'interval', minutes=1)
+scheduler.start()
+
 # Create all database tables automatically
 Base.metadata.create_all(bind=engine)
 
@@ -44,6 +73,7 @@ class TaskCreate(BaseModel):
     description: Optional[str] = ""
     priority: Optional[str] = "medium"
     due_date: Optional[str] = None
+    user_email: Optional[str] = None
 
 # Home endpoint
 @app.get("/")
@@ -111,6 +141,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         priority=task.priority,
         completed=False,
         due_date=datetime.fromisoformat(task.due_date) if task.due_date else None,
+        user_email=task.user_email,
         ai_analysis=None
     )
 
