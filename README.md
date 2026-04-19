@@ -4,21 +4,6 @@ A full-stack AI-powered task manager where users add tasks and Groq AI automatic
 
 ---
 
-## Live Demo
-
-Run locally with one command:
-
-```bash
-git clone git@github.com:exe-nsg/smart-task-manager.git
-cd smart-task-manager
-echo "GROQ_API_KEY=your_key_here" > .env
-docker-compose up
-```
-
-Visit → **http://localhost:3000**
-
----
-
 ## ✨ Features
 
 - Add tasks with title, description, and priority
