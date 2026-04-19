@@ -109,6 +109,5 @@ pytest backend/tests/ -v
 ## Author
 
 **Naga Sai Ganesh Pasumarthi**
-- GitHub: [@exe-nsg](https://github.com/exe-nsg)
 - University: Texas State University
 - Program: MS Data Analytics and Information Systems
