@@ -34,32 +34,30 @@ A full-stack AI-powered task manager where users add tasks and Groq AI automatic
 ---
 
 ## Project Structure
+```
 smart-task-manager/
-│
-├──  backend/
-│   ├──  app/
-│   │   ├──  main.py          # FastAPI server + API endpoints
-│   │   ├──  ai_service.py    # Groq AI integration
-│   │   ├──  email_service.py # Email reminder system
-│   │   ├──  database.py      # SQLite connection
-│   │   └──  models.py        # Database models
-│   ├──  tests/
-│   │   └──  test_main.py     # Automated tests
-│   ├──  requirements.txt
-│   └──  Dockerfile
-│
-├──  frontend/
-│   ├──  src/
-│   │   ├──  App.js           # Main React component
+├── backend/
+│   ├── app/
+│   │   ├── main.py          # FastAPI server + API endpoints
+│   │   ├── ai_service.py    # Groq AI integration
+│   │   ├── email_service.py # Email reminder system
+│   │   ├── database.py      # SQLite connection
+│   │   └── models.py        # Database models
+│   ├── tests/
+│   │   └── test_main.py     # Automated tests
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── App.js           # Main React component
 │   │   └── App.css          # Premium dark UI styles
-│   └──  Dockerfile
-│
-├──  jenkins/
-│   └──   Jenkinsfile          # CI/CD pipeline
-│
-├──  docker-compose.yml
-├──  .env.example
-└──  README.md
+│   └── Dockerfile
+├── jenkins/
+│   └── Jenkinsfile          # CI/CD pipeline
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
 
 ---
 
@@ -114,4 +112,3 @@ pytest backend/tests/ -v
 - GitHub: [@exe-nsg](https://github.com/exe-nsg)
 - University: Texas State University
 - Program: MS Data Analytics and Information Systems
-EOF
